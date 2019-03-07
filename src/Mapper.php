@@ -20,6 +20,7 @@ use Niko9911\JsonToEntity\Domain\EntityBuilder;
 use Niko9911\JsonToEntity\Domain\Exception\MappingException;
 use Niko9911\JsonToEntity\Domain\Exception\PropertyNotNullableException;
 use Niko9911\JsonToEntity\Domain\Exception\PropertyUndefinedException;
+use Niko9911\JsonToEntity\Domain\Exception\ValueCannotBeCastedToRequestedTypeException;
 use Niko9911\JsonToEntity\Domain\Property\Inspector;
 use Niko9911\JsonToEntity\Domain\Strings;
 use Symfony\Component\PropertyInfo\Type;
@@ -59,14 +60,17 @@ class Mapper
      *
      * @return object mapped object is returned
      *
-     * @throws PropertyUndefinedException   Will be thrown if the given json value does not exist
-     *                                      on the target entity. Can be override with the constructor
-     *                                      parameter `noExceptionOnUndefinedProperty`
-     * @throws PropertyNotNullableException Will be thrown in case of entity property
-     *                                      does not accept null values. Can be override
-     *                                      with the constructor parameter `noExceptionOnNonNullable`
-     * @throws MappingException             Will be throw in case of something is wrong in the code.
-     *                                      For example, the given entity class doesnt exist.
+     * @throws PropertyUndefinedException                  Will be thrown if the given json value does not exist
+     *                                                     on the target entity. Can be override with the constructor
+     *                                                     parameter `noExceptionOnUndefinedProperty`
+     * @throws PropertyNotNullableException                Will be thrown in case of entity property
+     *                                                     does not accept null values. Can be override
+     *                                                     with the constructor parameter `noExceptionOnNonNullable`
+     * @throws MappingException                            Will be throw in case of something is wrong in the code.
+     *                                                     For example, the given entity class doesnt exist.
+     * @throws ValueCannotBeCastedToRequestedTypeException Will be thrown in case of given value could not be casted
+     *                                                     to requested type. For example, if value was int and too
+     *                                                     big PHP to support it as int. (PHP_INT_MAX)
      */
     public function map(object $json, string $object): object
     {
@@ -77,7 +81,12 @@ class Mapper
         }
 
         $providedProperties = [];
+        /**
+         * @var string
+         * @var string|int|bool|array|null $jsonValue
+         */
         foreach ($json as $key => $jsonValue) {
+            $jsonKey = $key;
             $key = Strings::getSafeName($key);
 
             try {
@@ -93,7 +102,8 @@ class Mapper
             $providedProperties[$key] = $this->getValueAsTypeParsed(
                 $jsonValue,
                 $reflectedProperty,
-                $key
+                $key,
+                $jsonKey
             );
         }
 
@@ -126,11 +136,37 @@ class Mapper
      * @return mixed
      *
      * @throws PropertyNotNullableException
+     * @throws ValueCannotBeCastedToRequestedTypeException
      */
-    protected function getValueAsTypeParsed($value, Type $type, string $propertyName)
+    protected function getValueAsTypeParsed($value, Type $type, string $propertyName, string $jsonKey)
     {
         if (null === $type->getClassName() && !\in_array($type->getBuiltinType(), static::COMPLEX_TYPES, false)) {
-            \settype($value, $type->getBuiltinType());
+
+            $oldType = \gettype($value);
+            $oldValue = $value;
+            $converted = \settype($value, $type->getBuiltinType());
+
+            if (!$converted)
+            {
+                throw new ValueCannotBeCastedToRequestedTypeException(
+                    $propertyName,
+                    $jsonKey,
+                    $type->getBuiltinType(),
+                    $value
+                );
+            }
+
+            // Check if original type double was too big for PHP (PHP_INT_MAX)
+            if ($oldType === 'double' && $oldValue !== 0 && $value === 0)
+            {
+                throw new ValueCannotBeCastedToRequestedTypeException(
+                    $propertyName,
+                    $jsonKey,
+                    $type->getBuiltinType(),
+                    $value,
+                    'Too big value. See PHP_INT_MAX or mark property as double.'
+                );
+            }
 
             return $value;
         }

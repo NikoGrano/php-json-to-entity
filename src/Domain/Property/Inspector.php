@@ -66,6 +66,7 @@ class Inspector
         $extractor = self::getSymfonyExtractor();
         $properties = $extractor->getProperties($className);
         $returnValues = [];
+
         foreach ($properties as $property) {
             $returnValues[$property] = $extractor->getTypes($className, $property)[0];
         }
@@ -88,6 +89,14 @@ class Inspector
         $extractor = self::getSymfonyExtractor();
         $name = $class->getName();
         $properties = $extractor->getProperties($class->getName());
+
+        if (null === $properties) {
+            throw new PropertyUndefinedException(
+                "Property $propertyName is not declared in $name. 
+                NOTE: You need also getters for some brain damaged Symfony reasons."
+            );
+        }
+
         $propertiesFlip = \array_flip($properties);
 
         if (!isset($propertiesFlip[$propertyName])) {

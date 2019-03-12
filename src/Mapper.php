@@ -132,8 +132,8 @@ class Mapper
      * @param        $value
      * @param Type   $type
      * @param string $propertyName
-     *
      * @param string $jsonKey
+     *
      * @return mixed
      *
      * @throws MappingException
@@ -144,13 +144,11 @@ class Mapper
     protected function getValueAsTypeParsed($value, Type $type, string $propertyName, string $jsonKey)
     {
         if (null === $type->getClassName() && !\in_array($type->getBuiltinType(), static::COMPLEX_TYPES, false)) {
-
             $oldType = \gettype($value);
             $oldValue = $value;
             $converted = \settype($value, $type->getBuiltinType());
 
-            if (!$converted)
-            {
+            if (!$converted) {
                 throw new ValueCannotBeCastedToRequestedTypeException(
                     $propertyName,
                     $jsonKey,
@@ -160,8 +158,7 @@ class Mapper
             }
 
             // Check if original type double was too big for PHP (PHP_INT_MAX)
-            if ($oldType === 'double' && $oldValue !== 0 && $value === 0)
-            {
+            if ('double' === $oldType && 0 !== $oldValue && 0 === $value) {
                 throw new ValueCannotBeCastedToRequestedTypeException(
                     $propertyName,
                     $jsonKey,
@@ -188,7 +185,9 @@ class Mapper
      * @param Type   $type
      * @param        $value
      * @param string $jsonKey
+     *
      * @return object
+     *
      * @throws MappingException
      * @throws PropertyNotNullableException
      * @throws PropertyUndefinedException
@@ -203,8 +202,7 @@ class Mapper
             throw new MappingException($e->getMessage(), $e->getCode(), $e);
         }
 
-        foreach (Inspector::getAllPropertiesWithTypes($class) as $propertyName => $subType)
-        {
+        foreach (Inspector::getAllPropertiesWithTypes($class) as $propertyName => $subType) {
             try {
                 $entityBuilder->addProperty(
                     $propertyName,

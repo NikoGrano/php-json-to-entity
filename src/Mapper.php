@@ -108,7 +108,7 @@ class Mapper
         }
 
         if (!$this->noExceptionOnNonNullable) {
-            foreach (Inspector::getAllMethodsWithTypes($object) as $item => $counterValues) {
+            foreach (Inspector::getAllPropertiesWithTypes($object) as $item => $counterValues) {
                 if (!isset($providedProperties[$item]) && !$counterValues->isNullable()) {
                     throw new PropertyNotNullableException($item);
                 }
@@ -136,7 +136,9 @@ class Mapper
      * @param string $jsonKey
      * @return mixed
      *
+     * @throws MappingException
      * @throws PropertyNotNullableException
+     * @throws PropertyUndefinedException
      * @throws ValueCannotBeCastedToRequestedTypeException
      */
     protected function getValueAsTypeParsed($value, Type $type, string $propertyName, string $jsonKey)
@@ -179,6 +181,40 @@ class Mapper
             }
         }
 
-        throw new \Exception('I Fucked up');
+        return $this->getObjectValuesAsParsed($type, $value, $jsonKey);
+    }
+
+    /**
+     * @param Type   $type
+     * @param        $value
+     * @param string $jsonKey
+     * @return object
+     * @throws MappingException
+     * @throws PropertyNotNullableException
+     * @throws PropertyUndefinedException
+     * @throws ValueCannotBeCastedToRequestedTypeException
+     */
+    protected function getObjectValuesAsParsed(Type $type, $value, string $jsonKey): object
+    {
+        $class = $type->getClassName();
+        try {
+            $entityBuilder = new EntityBuilder($class);
+        } catch (\ReflectionException $e) {
+            throw new MappingException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        foreach (Inspector::getAllPropertiesWithTypes($class) as $propertyName => $subType)
+        {
+            try {
+                $entityBuilder->addProperty(
+                    $propertyName,
+                    $this->getValueAsTypeParsed($value, $subType, $propertyName, $jsonKey.$propertyName)
+                );
+            } catch (\ReflectionException $e) {
+                throw new MappingException($e->getMessage(), $e->getCode(), $e);
+            }
+        }
+
+        return $entityBuilder->getEntity();
     }
 }

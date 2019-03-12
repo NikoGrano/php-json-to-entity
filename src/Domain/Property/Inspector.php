@@ -61,7 +61,7 @@ class Inspector
      *
      * @internal
      */
-    public static function getAllMethodsWithTypes(string $className): array
+    public static function getAllPropertiesWithTypes(string $className): array
     {
         $extractor = self::getSymfonyExtractor();
         $properties = $extractor->getProperties($className);

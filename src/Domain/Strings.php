@@ -30,7 +30,7 @@ class Strings
      *
      * @internal
      */
-    protected static function getCamelCaseName($name): string
+    protected static function getCamelCaseName(string $name): string
     {
         return \str_replace(
             ' ',
@@ -50,7 +50,7 @@ class Strings
      *
      * @internal
      */
-    public static function getSafeName($name): string
+    public static function getSafeName(string $name): string
     {
         if (false !== \mb_strpos($name, '-')) {
             $name = self::getCamelCaseName($name);

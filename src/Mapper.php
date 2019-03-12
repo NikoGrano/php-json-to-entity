@@ -133,6 +133,7 @@ class Mapper
      * @param Type   $type
      * @param string $propertyName
      *
+     * @param string $jsonKey
      * @return mixed
      *
      * @throws PropertyNotNullableException

@@ -17,6 +17,7 @@ before_script:
   - docker-php-ext-enable xdebug > /dev/null
   - wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | php -- --quiet
   - chmod +x composer.phar ; mv composer.phar /usr/bin
+  - ls -la
   - composer install $DEFAULT_COMPOSER_FLAGS -q > /dev/null
   - composer global show hirak/prestissimo -q || composer global require $DEFAULT_COMPOSER_FLAGS hirak/prestissimo -q
 

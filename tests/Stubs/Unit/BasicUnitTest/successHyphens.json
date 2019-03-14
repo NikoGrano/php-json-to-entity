@@ -1,0 +1,5 @@
+{
+  "bar": "Some_Bar",
+  "foo": 10,
+  "foo-bar": ["a", "b", "c"]
+}

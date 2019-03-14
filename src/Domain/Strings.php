@@ -19,7 +19,7 @@ namespace Niko9911\JsonToEntity\Domain;
  *
  * @internal
  */
-class Strings
+final class Strings
 {
     /**
      * Removes - and _ and makes the next letter uppercase.
@@ -30,12 +30,14 @@ class Strings
      *
      * @internal
      */
-    protected static function getCamelCaseName(string $name): string
+    private static function getCamelCaseName(string $name): string
     {
-        return \str_replace(
-            ' ',
-            '',
-            \ucwords(\str_replace(['_', '-'], ' ', $name))
+        return \lcfirst(
+            \str_replace(
+                ' ',
+                '',
+                \ucwords(\str_replace(['_', '-'], ' ', $name))
+            )
         );
     }
 

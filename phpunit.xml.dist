@@ -9,6 +9,10 @@
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="true">
             <directory suffix=".php">./src</directory>
+            <exclude>
+                <!-- Common excludes -->
+                <directory>src/Domain/Exception</directory>
+            </exclude>
         </whitelist>
     </filter>
 </phpunit>

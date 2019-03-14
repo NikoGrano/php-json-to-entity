@@ -1,0 +1,17 @@
+{
+  "subEntity": {
+    "subSubEntity": {
+      "id": 10,
+      "name": "Chuck Norris"
+    },
+    "worthiness": 20.50,
+    "processed": false
+  },
+  "simple": ["a", 10, true, 1.2],
+  "complex": {
+    "string": "b",
+    "int": 15,
+    "bool": false,
+    "float": 1.5
+  }
+}

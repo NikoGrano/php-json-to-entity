@@ -1,5 +1,5 @@
 .idea
-/.php_cs.cache
+/*.cache
 /vendor
 .DS_Store
 node_modules
@@ -10,3 +10,4 @@ package-lock.json
 *.njsproj
 *.sln
 *.sw*
+/coverage

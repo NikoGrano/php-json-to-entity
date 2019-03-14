@@ -93,7 +93,7 @@ class Inspector
         if (null === $properties) {
             throw new PropertyUndefinedException(
                 "Property $propertyName is not declared in $name. 
-                NOTE: You need also getters for some brain damaged Symfony reasons."
+                NOTE: You need also getters for properties. This is intended behavior due Symfony PropertyInfo library."
             );
         }
 
@@ -102,8 +102,12 @@ class Inspector
         if (!isset($propertiesFlip[$propertyName])) {
             foreach ($properties as $key => $property) {
                 if (0 === \strcasecmp($property, $propertyName)) {
+                    // Currently this is fallback, if some reason Symfony breaks.
+                    // Not testable and is only long shot, if something break in deps.
+                    // @codeCoverageIgnoreStart
                     $foundKey = $key;
                     break;
+                    // @codeCoverageIgnoreEnd
                 }
             }
         } else {

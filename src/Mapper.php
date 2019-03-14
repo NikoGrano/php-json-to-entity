@@ -14,8 +14,6 @@ declare(strict_types=1);
 
 namespace Niko9911\JsonToEntity;
 
-include_once __DIR__.'/../vendor/autoload.php';
-
 use Niko9911\JsonToEntity\Domain\EntityBuilder;
 use Niko9911\JsonToEntity\Domain\Exception\MappingException;
 use Niko9911\JsonToEntity\Domain\Exception\PropertyNotNullableException;
@@ -27,7 +25,7 @@ use Symfony\Component\PropertyInfo\Type;
 
 class Mapper
 {
-    protected const COMPLEX_TYPES = ['resource', 'callable', 'iterable'];
+    protected const COMPLEX_TYPES = ['resource', 'callable', 'iterable', 'object'];
 
     /**
      * @var bool
@@ -121,9 +119,12 @@ class Mapper
             foreach ($providedProperties as $propertyName => $value) {
                 $entityBuilder->addProperty($propertyName, $value);
             }
+            // @codeCoverageIgnoreStart
+            // Not possible to trigger without runtime memory manipulation.
         } catch (\ReflectionException $e) {
             throw new MappingException($e->getMessage());
         }
+        // @codeCoverageIgnoreEnd
 
         return $entityBuilder->getEntity();
     }
@@ -146,15 +147,17 @@ class Mapper
         if (null === $type->getClassName() && !\in_array($type->getBuiltinType(), static::COMPLEX_TYPES, false)) {
             $oldType = \gettype($value);
             $oldValue = $value;
-            $converted = \settype($value, $type->getBuiltinType());
 
-            if (!$converted) {
+            if (!\settype($value, $type->getBuiltinType())) {
+                // @codeCoverageIgnoreStart
+                // Have no idea how to trigger...
                 throw new ValueCannotBeCastedToRequestedTypeException(
                     $propertyName,
                     $jsonKey,
                     $type->getBuiltinType(),
                     $value
                 );
+                // @codeCoverageIgnoreEnd
             }
 
             // Check if original type double was too big for PHP (PHP_INT_MAX)
@@ -168,23 +171,35 @@ class Mapper
                 );
             }
 
+            if ('0' !== $oldType && \is_int($value) && 0 === $value && 'int' === $type->getBuiltinType()) {
+                throw new ValueCannotBeCastedToRequestedTypeException(
+                    $propertyName,
+                    $jsonKey,
+                    $type->getBuiltinType(),
+                    $value
+                );
+            }
+
             return $value;
         }
 
         if (!$this->noExceptionOnNonNullable) {
             $valueType = \gettype($value);
             if ('NULL' === $valueType && false === $type->isNullable()) {
+                // @codeCoverageIgnoreStart
+                // Not possible to trigger without runtime memory manipulation.
                 throw new PropertyNotNullableException($propertyName);
+                // @codeCoverageIgnoreEnd
             }
         }
 
-        return $this->getObjectValuesAsParsed($type, $value, $jsonKey);
+        // Type of object will pass here.
+        return $this->getObjectValuesAsParsed($type, $value);
     }
 
     /**
-     * @param Type   $type
-     * @param        $value
-     * @param string $jsonKey
+     * @param Type $type
+     * @param      $value
      *
      * @return object
      *
@@ -193,24 +208,45 @@ class Mapper
      * @throws PropertyUndefinedException
      * @throws ValueCannotBeCastedToRequestedTypeException
      */
-    protected function getObjectValuesAsParsed(Type $type, $value, string $jsonKey): object
+    protected function getObjectValuesAsParsed(Type $type, $value): object
     {
         $class = $type->getClassName();
         try {
             $entityBuilder = new EntityBuilder($class);
+            // @codeCoverageIgnoreStart
+            // Should not be possible to trigger this without runtime memory manipulation.
         } catch (\ReflectionException $e) {
             throw new MappingException($e->getMessage(), $e->getCode(), $e);
+            // @codeCoverageIgnoreEnd
         }
 
         foreach (Inspector::getAllPropertiesWithTypes($class) as $propertyName => $subType) {
+            $subPropertyName = Strings::getSafeName($propertyName);
+            if ($value instanceof \stdClass) {
+                if (!isset($value->$subPropertyName)) {
+                    $subPropertyName = \mb_strtolower(
+                        \preg_replace('/\B([A-Z])/', '-$1', $propertyName)
+                    );
+                }
+
+                if (!isset($value->$subPropertyName)) {
+                    throw new PropertyNotNullableException(Strings::getSafeName($propertyName));
+                }
+
+                $subValue = $value->$subPropertyName;
+            }
+
             try {
                 $entityBuilder->addProperty(
                     $propertyName,
-                    $this->getValueAsTypeParsed($value, $subType, $propertyName, $jsonKey.$propertyName)
+                    $this->getValueAsTypeParsed($subValue, $subType, $subPropertyName, $subPropertyName)
                 );
+                // @codeCoverageIgnoreStart
             } catch (\ReflectionException $e) {
                 throw new MappingException($e->getMessage(), $e->getCode(), $e);
+                // Should not be possible to trigger this without runtime memory manipulation.
             }
+            // @codeCoverageIgnoreEnd
         }
 
         return $entityBuilder->getEntity();

@@ -220,7 +220,8 @@ class Mapper
             // @codeCoverageIgnoreEnd
         }
 
-        foreach (Inspector::getAllPropertiesWithTypes($class) as $propertyName => $subType) {
+        $subProperties = Inspector::getAllPropertiesWithTypes($class);
+        foreach ($subProperties as $propertyName => $subType) {
             $subPropertyName = Strings::getSafeName($propertyName);
             if ($value instanceof \stdClass) {
                 if (!isset($value->$subPropertyName)) {
@@ -234,12 +235,14 @@ class Mapper
                 }
 
                 $subValue = $value->$subPropertyName;
+            } elseif (1 === \count($subProperties)) {
+                $subValue = $value;
             }
 
             try {
                 $entityBuilder->addProperty(
                     $propertyName,
-                    $this->getValueAsTypeParsed($subValue, $subType, $subPropertyName, $subPropertyName)
+                    $this->getValueAsTypeParsed($subValue ?? null, $subType, $subPropertyName, $subPropertyName)
                 );
                 // @codeCoverageIgnoreStart
             } catch (\ReflectionException $e) {

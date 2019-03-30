@@ -235,7 +235,7 @@ class Mapper
                 }
 
                 $subValue = $value->$subPropertyName;
-            } elseif (\count($subProperties) === 1) {
+            } elseif (1 === \count($subProperties)) {
                 $subValue = $value;
             }
 
